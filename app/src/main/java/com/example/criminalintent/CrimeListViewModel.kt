@@ -1,10 +1,10 @@
 package com.example.criminalintent
 
-import android.text.format.DateFormat
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.text.SimpleDateFormat
 import java.util.*
 
 class CrimeListViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
@@ -27,9 +27,6 @@ class CrimeListViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
 
 val FormattedDate = object : Date() {
     override fun toString(): String {
-        var formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
-        val date = LocalDate.parse( formatter).toString()
-
-        return date
+        return SimpleDateFormat("EEEE, MMM dd, yyyy", Locale.US).format(Date())
     }
 }
