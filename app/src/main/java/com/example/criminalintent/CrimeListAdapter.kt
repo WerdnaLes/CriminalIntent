@@ -33,6 +33,7 @@ class CrimeListAdapter(
     private val crimes: List<Crime>
 ) : RecyclerView.Adapter<CrimeHolder>() {
 
+    // Creates specific ViewHolder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CrimeHolder {
         val inflater = LayoutInflater.from(parent.context)
         val binding =
@@ -40,11 +41,13 @@ class CrimeListAdapter(
         return CrimeHolder(binding)
     }
 
+    // Binds the ViewHolder with an information
     override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
         val crime = crimes[position]
         holder.bind(crime)
     }
 
+    // Represents how many times adapter will call the onCreateViewHolder()
     override fun getItemCount(): Int {
         return crimes.size
     }
