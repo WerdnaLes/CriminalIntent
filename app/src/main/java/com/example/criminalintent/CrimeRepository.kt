@@ -3,6 +3,7 @@ package com.example.criminalintent
 import android.content.Context
 import androidx.room.Room
 import com.example.criminalintent.database.CrimeDatabase
+import kotlinx.coroutines.flow.Flow
 import java.util.UUID
 
 /*
@@ -21,10 +22,11 @@ class CrimeRepository private constructor(context: Context) {
             context.applicationContext,
             CrimeDatabase::class.java,
             DATABASE_NAME
-        ).build()
+        ).createFromAsset(DATABASE_NAME)
+        .build()
 
     // Adding repository functions:
-    suspend fun getCrimes(): List<Crime> =
+    fun getCrimes(): Flow<List<Crime>> =
         database.crimeDao().getCrimes()
 
     suspend fun getCrime(id: UUID): Crime =

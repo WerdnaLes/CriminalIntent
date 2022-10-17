@@ -7,7 +7,9 @@ import com.example.criminalintent.Crime
 
 /*
 Adding @TypeConverters tells the database to use the functions
-in that class when converting types
+in that class when converting types.
+
+~Add exportSchema = false parameter if you want to disable the export
 */
 
 @Database(entities = [Crime::class], version = 1) // class that represents the database
