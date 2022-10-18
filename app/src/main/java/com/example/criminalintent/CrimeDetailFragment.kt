@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -43,6 +45,21 @@ class CrimeDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        /*
+        Prevent going back if the title is blank. The callback should be called in at least
+        STARTED state.
+        */
+        val onBackPressedCallback = requireActivity()
+            .onBackPressedDispatcher
+            .addCallback(this) {
+                Toast.makeText(
+                    requireContext(),
+                    "Title can not blank!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
+
         // UI update TO the backEnd (CrimeListDetailViewModel)
         binding.apply {
             crimeTitle.doOnTextChanged { text, _, _, _ ->
@@ -66,7 +83,11 @@ class CrimeDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 crimeDetailViewModel.crime.collect { crime ->
-                    crime?.let { updateUi(it) }
+                    crime?.let {
+                        // Enabling callback if the title is blank:
+                        onBackPressedCallback.isEnabled = crime.title == ""
+                        updateUi(it)
+                    }
                 }
             }
         }
