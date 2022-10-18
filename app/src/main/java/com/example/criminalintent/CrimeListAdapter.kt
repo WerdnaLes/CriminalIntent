@@ -6,6 +6,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.criminalintent.databinding.ListItemCrimeBinding
+import java.util.UUID
 
 class CrimeHolder(
     private val binding: ListItemCrimeBinding
@@ -13,7 +14,7 @@ class CrimeHolder(
 
     fun bind(
         crime: Crime,
-        onCrimeClicked: () -> Unit
+        onCrimeClicked: (crimeId:UUID) -> Unit
     ) {
         binding.crimeTitle.text = crime.title
         binding.crimeDate.text = crime.date.toString()
@@ -24,14 +25,14 @@ class CrimeHolder(
         }
 
         binding.root.setOnClickListener {
-            onCrimeClicked()
+            onCrimeClicked(crime.id)
         }
     }
 }
 
 class CrimeListAdapter(
     private val crimes: List<Crime>,
-    private val onCrimeClicked: () -> Unit
+    private val onCrimeClicked: (crimeId:UUID) -> Unit
 ) : RecyclerView.Adapter<CrimeHolder>() {
 
     // Creates specific ViewHolder

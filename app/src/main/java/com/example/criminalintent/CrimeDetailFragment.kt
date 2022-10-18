@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.navArgs
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
 import java.util.*
 
@@ -22,6 +23,8 @@ class CrimeDetailFragment : Fragment() {
 
     lateinit var crime: Crime
 
+    private val args: CrimeDetailFragmentArgs by navArgs()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.d(TAG, "onCreate() called")
@@ -32,6 +35,8 @@ class CrimeDetailFragment : Fragment() {
             date = Date(),
             isSolved = false
         )
+
+        Log.d(TAG, "The crime ID is: ${args.crimeId}") // The crime ID is: cd06b3ae-3ebe-480e-bf16-015910270519
     }
 
     override fun onCreateView(
