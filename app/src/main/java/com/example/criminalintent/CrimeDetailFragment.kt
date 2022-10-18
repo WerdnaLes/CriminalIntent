@@ -5,16 +5,20 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
+import java.util.Date
 
 class CrimeDetailFragment : Fragment() {
 
@@ -30,6 +34,8 @@ class CrimeDetailFragment : Fragment() {
         CrimeDetailViewModelFactory(args.crimeId)
     }
 
+    private lateinit var onBackPressedCallback: OnBackPressedCallback
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -39,26 +45,25 @@ class CrimeDetailFragment : Fragment() {
         _binding =
             FragmentCrimeDetailBinding.inflate(inflater, container, false)
 
+        /*
+        Prevent going back if the title is blank. The callback will be called in at least
+        STARTED state.
+        */
+        onBackPressedCallback = requireActivity()
+            .onBackPressedDispatcher
+            .addCallback(this) {
+                Toast.makeText(
+                    requireContext(),
+                    "Title can not be blank!",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-        /*
-        Prevent going back if the title is blank. The callback should be called in at least
-        STARTED state.
-        */
-        val onBackPressedCallback = requireActivity()
-            .onBackPressedDispatcher
-            .addCallback(this) {
-                Toast.makeText(
-                    requireContext(),
-                    "Title can not blank!",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
 
         // UI update TO the backEnd (CrimeListDetailViewModel)
         binding.apply {
@@ -66,10 +71,6 @@ class CrimeDetailFragment : Fragment() {
                 crimeDetailViewModel.updateCrime { oldCrime ->
                     oldCrime.copy(title = text.toString())
                 }
-            }
-
-            crimeDate.apply {
-                isEnabled = false
             }
 
             crimeSolved.setOnCheckedChangeListener { _, isChecked ->
@@ -83,13 +84,18 @@ class CrimeDetailFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 crimeDetailViewModel.crime.collect { crime ->
-                    crime?.let {
-                        // Enabling callback if the title is blank:
-                        onBackPressedCallback.isEnabled = crime.title == ""
-                        updateUi(it)
-                    }
+                    crime?.let { updateUi(it) }
                 }
             }
+        }
+
+        // Set listener for DatePickerFragment results:
+        setFragmentResultListener(
+            DatePickerFragment.REQUEST_KEY_DATE
+        ) { _, bundle ->
+            val newDate =
+                bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE) as Date
+            crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
         }
     }
 
@@ -104,7 +110,14 @@ class CrimeDetailFragment : Fragment() {
                 crimeTitle.setText(crime.title)
             }
             crimeDate.text = crime.date.toString()
+            // Showing Dialog Fragment:
+            crimeDate.setOnClickListener {
+                findNavController()
+                    .navigate(CrimeDetailFragmentDirections.selectDate(crime.date))
+            }
             crimeSolved.isChecked = crime.isSolved
+            // Enabling callback if the title is blank:
+            onBackPressedCallback.isEnabled = crime.title == ""
         }
     }
 }
