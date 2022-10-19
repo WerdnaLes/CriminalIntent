@@ -2,8 +2,7 @@ package com.example.criminalintent
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import java.util.Date
-import java.util.UUID
+import java.util.*
 
 @Entity // declare the class as an Entity of Database
 data class Crime(

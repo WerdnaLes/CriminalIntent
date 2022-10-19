@@ -16,6 +16,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.example.criminalintent.database.FormattedDate
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
 import java.util.Date
@@ -97,6 +98,15 @@ class CrimeDetailFragment : Fragment() {
                 bundle.getSerializable(DatePickerFragment.BUNDLE_KEY_DATE) as Date
             crimeDetailViewModel.updateCrime { it.copy(date = newDate) }
         }
+
+        // Set listener for TimePickerFragment results (Challenge):
+        setFragmentResultListener(
+            TimePickerFragment.REQUEST_KEY_DATE
+        ) { _, bundle ->
+            val newTime =
+                bundle.getSerializable(TimePickerFragment.BUNDLE_KEY_DATE) as Date
+            crimeDetailViewModel.updateCrime { it.copy(date = newTime) }
+        }
     }
 
     override fun onDestroyView() {
@@ -109,11 +119,17 @@ class CrimeDetailFragment : Fragment() {
             if (crimeTitle.text.toString() != crime.title) {
                 crimeTitle.setText(crime.title)
             }
-            crimeDate.text = crime.date.toString()
+            crimeDate.text = FormattedDate(crime.date.time).toString() // Orig: crime.date.toString()
             // Showing Dialog Fragment:
             crimeDate.setOnClickListener {
                 findNavController()
                     .navigate(CrimeDetailFragmentDirections.selectDate(crime.date))
+            }
+            crimeTime.text = FormattedDate(crime.date.time).timeString()
+            // Showing TimePickerDialog (Challenge):
+            crimeTime.setOnClickListener {
+                findNavController()
+                    .navigate(CrimeDetailFragmentDirections.selectTime(crime.date))
             }
             crimeSolved.isChecked = crime.isSolved
             // Enabling callback if the title is blank:

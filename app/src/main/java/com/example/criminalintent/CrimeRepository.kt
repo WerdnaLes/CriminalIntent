@@ -8,7 +8,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
-import java.util.UUID
+import java.util.*
 
 /*
 Creating a singleton class with help of private constructor and companion object.

@@ -26,9 +26,3 @@ class CrimeListViewModel : ViewModel() {
         }
     }
 }
-
-val FormattedDate = object : Date() {
-    override fun toString(): String {
-        return SimpleDateFormat("EEEE, MMM dd, yyyy", Locale.US).format(Date())
-    }
-}
