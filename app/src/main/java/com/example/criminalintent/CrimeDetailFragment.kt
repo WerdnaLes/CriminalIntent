@@ -1,12 +1,12 @@
 package com.example.criminalintent
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
+import androidx.core.view.MenuHost
+import androidx.core.view.MenuProvider
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -19,7 +19,7 @@ import androidx.navigation.fragment.navArgs
 import com.example.criminalintent.database.FormattedDate
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
-import java.util.Date
+import java.util.*
 
 class CrimeDetailFragment : Fragment() {
 
@@ -83,9 +83,11 @@ class CrimeDetailFragment : Fragment() {
 
         // UI update FROM the backEnd (CrimeListDetailViewModel)
         viewLifecycleOwner.lifecycleScope.launch {
-            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 crimeDetailViewModel.crime.collect { crime ->
-                    crime?.let { updateUi(it) }
+                    crime?.let {
+                        updateUi(it)
+                    }
                 }
             }
         }
@@ -107,6 +109,24 @@ class CrimeDetailFragment : Fragment() {
                 bundle.getSerializable(TimePickerFragment.BUNDLE_KEY_DATE) as Date
             crimeDetailViewModel.updateCrime { it.copy(date = newTime) }
         }
+
+        // Add the remove button to Action Bar (Challenge):
+        val menuHost: MenuHost = requireActivity()
+        menuHost.addMenuProvider(object : MenuProvider {
+            override fun onCreateMenu(menu: Menu, menuInflater: MenuInflater) {
+                menuInflater.inflate(R.menu.fragment_crime_detail, menu)
+            }
+
+            override fun onMenuItemSelected(menuItem: MenuItem): Boolean {
+                return when (menuItem.itemId) {
+                    R.id.remove_crime -> {
+                        crimeRemoval()
+                        true
+                    }
+                    else -> false
+                }
+            }
+        }, viewLifecycleOwner, Lifecycle.State.RESUMED)
     }
 
     override fun onDestroyView() {
@@ -114,12 +134,24 @@ class CrimeDetailFragment : Fragment() {
         _binding = null
     }
 
+    private fun crimeRemoval() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            crimeDetailViewModel.crime.collect { crime ->
+                crime?.let {
+                    crimeDetailViewModel.removeCrime(it)
+                    findNavController().navigate(CrimeDetailFragmentDirections.crimeRemoval())
+                }
+            }
+        }
+    }
+
     private fun updateUi(crime: Crime) {
         binding.apply {
             if (crimeTitle.text.toString() != crime.title) {
                 crimeTitle.setText(crime.title)
             }
-            crimeDate.text = FormattedDate(crime.date.time).toString() // Orig: crime.date.toString()
+            crimeDate.text =
+                FormattedDate(crime.date.time).toString() // Orig: crime.date.toString()
             // Showing Dialog Fragment:
             crimeDate.setOnClickListener {
                 findNavController()

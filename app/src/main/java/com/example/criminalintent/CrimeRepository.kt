@@ -24,14 +24,14 @@ private constructor(
     private val coroutineScope: CoroutineScope = GlobalScope
 ) {
 
+    // UPD: Deleted creation from asset.
     // Setting up repository properties:
     private val database: CrimeDatabase = Room
         .databaseBuilder(
             context.applicationContext,
             CrimeDatabase::class.java,
             DATABASE_NAME
-        ).createFromAsset(DATABASE_NAME)
-        .build()
+        ).build()
 
     // Adding repository functions:
     fun getCrimes(): Flow<List<Crime>> =
@@ -44,6 +44,14 @@ private constructor(
         coroutineScope.launch {
             database.crimeDao().updateCrime(crime)
         }
+    }
+
+    suspend fun addCrime(crime: Crime) {
+        database.crimeDao().addCrime(crime)
+    }
+
+    suspend fun removeCrime(crime: Crime) {
+        database.crimeDao().removeCrime(crime)
     }
 
     // Creating singleton instance of CrimeRepository:

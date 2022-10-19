@@ -32,6 +32,12 @@ class CrimeDetailViewModel(crimeId: UUID) : ViewModel() {
         }
     }
 
+    fun removeCrime(crime: Crime) {
+        viewModelScope.launch {
+            crimeRepository.removeCrime(crime)
+        }
+    }
+
     // Update database with the new user input when pressing "BACK" from the DetailFragment
     override fun onCleared() {
         super.onCleared()

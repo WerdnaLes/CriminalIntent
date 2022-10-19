@@ -18,7 +18,8 @@
         android:layout_height="wrap_content"
         android:hint="@string/crime_title_hint"
         android:importantForAutofill="no"
-        android:inputType="text" />
+        android:inputType="text"
+        android:minHeight="48dp" />
 
     <TextView
         android:layout_width="match_parent"

@@ -20,7 +20,7 @@
         android:id="@+id/crimeDetailFragment"
         android:name="com.example.criminalintent.CrimeDetailFragment"
         android:label="CrimeDetailFragment"
-        tools:layout="@layout/fragment_crime_detail" >
+        tools:layout="@layout/fragment_crime_detail">
         <argument
             android:name="crimeId"
             app:argType="java.util.UUID" />
@@ -30,11 +30,14 @@
         <action
             android:id="@+id/select_time"
             app:destination="@id/timePickerFragment" />
+        <action
+            android:id="@+id/crime_removal"
+            app:destination="@id/crimeListFragment" />
     </fragment>
     <dialog
         android:id="@+id/datePickerFragment"
         android:name="com.example.criminalintent.DatePickerFragment"
-        android:label="DatePickerFragment" >
+        android:label="DatePickerFragment">
         <argument
             android:name="crimeDate"
             app:argType="java.util.Date" />
@@ -42,7 +45,7 @@
     <dialog
         android:id="@+id/timePickerFragment"
         android:name="com.example.criminalintent.TimePickerFragment"
-        android:label="TimePickerFragment" >
+        android:label="TimePickerFragment">
         <argument
             android:name="crimeTime"
             app:argType="java.util.Date" />
