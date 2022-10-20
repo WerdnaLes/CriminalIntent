@@ -1,7 +1,6 @@
 package com.example.criminalintent.database
 
 import androidx.room.TypeConverter
-import java.text.SimpleDateFormat
 import java.util.*
 
 /*
@@ -19,18 +18,5 @@ class CrimeTypeConverters {
     @TypeConverter // Return Long as Date object
     fun toDate(millisSinceEpoch: Long): Date {
         return Date(millisSinceEpoch)
-    }
-}
-
-// Custom Date for Buttons date representing:
-class FormattedDate(
-    private val millis: Long = System.currentTimeMillis()
-) : Date() {
-    override fun toString(): String {
-        return SimpleDateFormat("EEEE, MMM dd, yyyy", Locale.US).format(Date(millis))
-    }
-
-    fun timeString():String{
-        return SimpleDateFormat("h:mm a", Locale.US).format(Date(millis))
     }
 }

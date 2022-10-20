@@ -1,5 +1,6 @@
 package com.example.criminalintent
 
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,10 +14,10 @@ class CrimeHolder(
 
     fun bind(
         crime: Crime,
-        onCrimeClicked: (crimeId:UUID) -> Unit
+        onCrimeClicked: (crimeId: UUID) -> Unit
     ) {
         binding.crimeTitle.text = crime.title
-        binding.crimeDate.text = crime.date.toString()
+        binding.crimeDate.text = DateFormat.format("EEE, MMMM dd, h:mm a, yyyy", crime.date).toString()
         binding.crimeSolved.visibility = if (crime.isSolved) {
             View.VISIBLE
         } else {
@@ -31,7 +32,7 @@ class CrimeHolder(
 
 class CrimeListAdapter(
     private val crimes: List<Crime>,
-    private val onCrimeClicked: (crimeId:UUID) -> Unit
+    private val onCrimeClicked: (crimeId: UUID) -> Unit
 ) : RecyclerView.Adapter<CrimeHolder>() {
 
     // Creates specific ViewHolder

@@ -27,5 +27,12 @@
                 android:value="" />
         </activity>
     </application>
+    <!--Adding external queries to block all the external intents.-->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+            <data android:mimeType="vnd.android.cursor.dir/contact" />
+        </intent>
+    </queries>
 
 </manifest>

@@ -6,6 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <!--Only visible if the list is empty-->
     <TextView
         android:id="@+id/empty_text"
         style="@style/TextAppearance.MaterialComponents.Headline5"
@@ -18,6 +19,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!--Only visible if the list is empty-->
     <Button
         android:id="@+id/add_crime_btn"
         android:layout_width="wrap_content"
