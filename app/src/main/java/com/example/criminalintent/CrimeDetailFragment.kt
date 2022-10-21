@@ -55,25 +55,19 @@ class CrimeDetailFragment : Fragment() {
         uri?.let { parseContactSelection(it) }
     }
 
+    // Get result from RequestPermission for READ_CONTACTS:
     private val callSuspect = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         // Disable/Enable buttons according to the permission granted:
         binding.isReadContactsPermissionGranted(isGranted)
-
     }
-
-    private lateinit var phoneNumber: Uri
 
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-
-        _binding =
-            FragmentCrimeDetailBinding.inflate(inflater, container, false)
-
         /*
         Prevent going back if the title is blank. The callback will be called in at least
         STARTED state.
@@ -88,13 +82,14 @@ class CrimeDetailFragment : Fragment() {
                 ).show()
             }
 
+        _binding =
+            FragmentCrimeDetailBinding.inflate(inflater, container, false)
+
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
-
         // UI update TO the backEnd (CrimeListDetailViewModel)
         binding.apply {
             crimeTitle.doOnTextChanged { text, _, _, _ ->
@@ -109,26 +104,9 @@ class CrimeDetailFragment : Fragment() {
                 }
             }
 
-            // Choose Suspect Button onClickListener:
+            // Choose a suspect from user's contacts:
             crimeSuspect.setOnClickListener {
                 selectSuspect.launch(null)
-            }
-
-            crimeCallBtn.setOnClickListener {
-                // If the number was found, start a new Intent
-                if (this@CrimeDetailFragment::phoneNumber.isInitialized) {
-                    val reportIntent =
-                        Intent(Intent.ACTION_DIAL, phoneNumber)
-
-                    startActivity(reportIntent)
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "You should choose the suspect first!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
             }
 
             // Ensure that the user has appropriate app to receive the intent:
@@ -144,7 +122,7 @@ class CrimeDetailFragment : Fragment() {
         // UI update FROM the backEnd (CrimeListDetailViewModel)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                checkDialPermission()
+                checkReadContactsPermission()
                 crimeDetailViewModel.crime.collect { crime ->
                     crime?.let {
                         updateUi(it)
@@ -195,6 +173,7 @@ class CrimeDetailFragment : Fragment() {
         _binding = null
     }
 
+    // Remove crime via Action Bar view:
     private fun crimeRemoval() {
         viewLifecycleOwner.lifecycleScope.launch {
             crimeDetailViewModel.crime.collect { crime ->
@@ -230,6 +209,7 @@ class CrimeDetailFragment : Fragment() {
 
             crimeSolved.isChecked = crime.isSolved
 
+            // Send Crime report button:
             crimeReport.setOnClickListener {
                 val reportIntent =
                     Intent(Intent.ACTION_SEND).apply {
@@ -241,6 +221,7 @@ class CrimeDetailFragment : Fragment() {
                         )
                     }
 
+                // Always ask which app should perform ACTION_SEND:
                 val chooserIntent = Intent.createChooser(
                     reportIntent,
                     getString(R.string.send_report)
@@ -248,6 +229,25 @@ class CrimeDetailFragment : Fragment() {
                 startActivity(chooserIntent)
             }
 
+            // Commit DIAL with a suspect phone number:
+            crimeCallBtn.setOnClickListener {
+                // URI HAS TO START WITH "tel:" !!!
+                if (crime.suspectPhoneNumber.isNotEmpty()) {
+                    val number = Uri.parse("tel:${crime.suspectPhoneNumber}")
+                    val dialIntent =
+                        Intent(Intent.ACTION_DIAL, number)
+
+                    startActivity(dialIntent)
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "You should choose the suspect first!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            // Set default text if there is no suspect
             crimeSuspect.text = crime.suspect.ifEmpty {
                 getString(R.string.crime_suspect_text)
             }
@@ -311,16 +311,16 @@ class CrimeDetailFragment : Fragment() {
                             arrayOf(suspectId),
                             null
                         )
-                    phoneCursor?.use { cursor1 ->
-                        if (cursor1.moveToFirst()) {
+                    phoneCursor?.use { numberCursor ->
+                        if (numberCursor.moveToFirst()) {
                             // Get the number in String format and parse it to URI so it is suitable for the Intent:
-                            // URI HAS TO START WITH "tel:" !!!
-                            phoneNumber = cursor1.getString(
-                                cursor1.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                            )
-                                .let { number ->
-                                    Uri.parse("tel:$number")
+                            numberCursor.getString(
+                                numberCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            ).let { phoneNumber ->
+                                crimeDetailViewModel.updateCrime { oldCrime ->
+                                    oldCrime.copy(suspectPhoneNumber = phoneNumber)
                                 }
+                            }
                         }
                     }
                 }
@@ -339,7 +339,8 @@ class CrimeDetailFragment : Fragment() {
         return resolvedActivity != null
     }
 
-    private fun checkDialPermission() {
+    // Check READ_CONTACTS permission:
+    private fun checkReadContactsPermission() {
         when {
             ActivityCompat.checkSelfPermission(
                 requireContext(),
@@ -382,6 +383,7 @@ class CrimeDetailFragment : Fragment() {
         }
     }
 
+    // Custom function to enable/disable buttons depending on whether the permission was granted
     private fun FragmentCrimeDetailBinding.isReadContactsPermissionGranted(
         isGranted: Boolean
     ) {

@@ -2,11 +2,11 @@
   "formatVersion": 1,
   "database": {
     "version": 2,
-    "identityHash": "aec5bece7348c6da7c4764b9df18df32",
+    "identityHash": "9956d128ffb9afa5034635cadc98edac",
     "entities": [
       {
         "tableName": "Crime",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `title` TEXT NOT NULL, `date` INTEGER NOT NULL, `isSolved` INTEGER NOT NULL, `suspect` TEXT NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` BLOB NOT NULL, `title` TEXT NOT NULL, `date` INTEGER NOT NULL, `isSolved` INTEGER NOT NULL, `suspect` TEXT NOT NULL, `suspectPhoneNumber` TEXT NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -37,6 +37,12 @@
             "columnName": "suspect",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "suspectPhoneNumber",
+            "columnName": "suspectPhoneNumber",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -52,7 +58,7 @@
     "views": [],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'aec5bece7348c6da7c4764b9df18df32')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9956d128ffb9afa5034635cadc98edac')"
     ]
   }
 }
