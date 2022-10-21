@@ -1,16 +1,20 @@
 package com.example.criminalintent
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.Settings
 import android.text.format.DateFormat
 import android.view.*
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
+import androidx.core.app.ActivityCompat
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.widget.doOnTextChanged
@@ -51,6 +55,16 @@ class CrimeDetailFragment : Fragment() {
         uri?.let { parseContactSelection(it) }
     }
 
+    private val callSuspect = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        // Disable/Enable buttons according to the permission granted:
+        binding.isReadContactsPermissionGranted(isGranted)
+
+    }
+
+    private lateinit var phoneNumber: Uri
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -80,6 +94,7 @@ class CrimeDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+
         // UI update TO the backEnd (CrimeListDetailViewModel)
         binding.apply {
             crimeTitle.doOnTextChanged { text, _, _, _ ->
@@ -94,10 +109,29 @@ class CrimeDetailFragment : Fragment() {
                 }
             }
 
+            // Choose Suspect Button onClickListener:
             crimeSuspect.setOnClickListener {
                 selectSuspect.launch(null)
             }
 
+            crimeCallBtn.setOnClickListener {
+                // If the number was found, start a new Intent
+                if (this@CrimeDetailFragment::phoneNumber.isInitialized) {
+                    val reportIntent =
+                        Intent(Intent.ACTION_DIAL, phoneNumber)
+
+                    startActivity(reportIntent)
+                } else {
+                    Toast.makeText(
+                        requireContext(),
+                        "You should choose the suspect first!",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+            }
+
+            // Ensure that the user has appropriate app to receive the intent:
             val selectSuspectIntent =
                 selectSuspect.contract.createIntent(
                     requireContext(),
@@ -110,6 +144,7 @@ class CrimeDetailFragment : Fragment() {
         // UI update FROM the backEnd (CrimeListDetailViewModel)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                checkDialPermission()
                 crimeDetailViewModel.crime.collect { crime ->
                     crime?.let {
                         updateUi(it)
@@ -243,21 +278,51 @@ class CrimeDetailFragment : Fragment() {
     }
 
     // Parse the Uri result picked from Contacts selected and update the Crime:
+    @SuppressLint("Range")
     private fun parseContactSelection(contactUri: Uri) {
-        // Return specific columns from an Uri row:
-        val queryFields =
-            arrayOf(ContactsContract.Contacts.DISPLAY_NAME)
-
         // Create cursor:
         val queryCursor = requireActivity().contentResolver
-            .query(contactUri, queryFields, null, null, null)
+            .query(contactUri, null, null, null, null)
 
         // Navigate through the cursor and retrieve the String value from the [0] column:
         queryCursor?.use { cursor ->
             if (cursor.moveToFirst()) {
-                val suspect = cursor.getString(0)
+                // Get contact name:
+                val suspect =
+                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
+                // Get contact ID:
+                val suspectId =
+                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
                 crimeDetailViewModel.updateCrime { oldCrime ->
                     oldCrime.copy(suspect = suspect)
+                }
+
+                // Check if the contact has a number:
+                val hasPhoneNumber =
+                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))
+                        .toInt()
+                // Proceed querying for the number by contact's ID:
+                if (hasPhoneNumber > 0) {
+                    val phoneCursor = requireActivity().contentResolver
+                        .query(
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                            null,
+                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                            arrayOf(suspectId),
+                            null
+                        )
+                    phoneCursor?.use { cursor1 ->
+                        if (cursor1.moveToFirst()) {
+                            // Get the number in String format and parse it to URI so it is suitable for the Intent:
+                            // URI HAS TO START WITH "tel:" !!!
+                            phoneNumber = cursor1.getString(
+                                cursor1.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                            )
+                                .let { number ->
+                                    Uri.parse("tel:$number")
+                                }
+                        }
+                    }
                 }
             }
         }
@@ -272,5 +337,56 @@ class CrimeDetailFragment : Fragment() {
                 PackageManager.MATCH_DEFAULT_ONLY
             )
         return resolvedActivity != null
+    }
+
+    private fun checkDialPermission() {
+        when {
+            ActivityCompat.checkSelfPermission(
+                requireContext(),
+                android.Manifest.permission.READ_CONTACTS
+            ) != PackageManager.PERMISSION_GRANTED -> {
+                // You can use the API that requires the permission.
+
+                // Create an AlertDialog to ask for permission:
+                val title = "Permission needed"
+                val message =
+                    "We need the permission to read contacts in order to choose a suspect and the ability to call them."
+                val builder = AlertDialog.Builder(requireContext())
+                builder.setTitle(title)
+                    .setMessage(message)
+                    .setPositiveButton(
+                        android.R.string.ok
+                    ) { _, _ ->
+                        callSuspect.launch(
+                            android.Manifest.permission.READ_CONTACTS
+                        )
+                    }
+                    // Open app settings to grant permissions:
+                    .setNegativeButton(R.string.move_to_settings) { _, _ ->
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                        val uri = Uri.fromParts("package", requireContext().packageName, null)
+                        intent.data = uri
+                        startActivity(intent)
+                    }
+                builder.create().show()
+
+            }
+            else -> {
+                // You can directly ask for the permission.
+                // The registered ActivityResultCallback gets the result of this request.
+                callSuspect.launch(
+                    android.Manifest.permission.READ_CONTACTS
+                )
+            }
+
+        }
+    }
+
+    private fun FragmentCrimeDetailBinding.isReadContactsPermissionGranted(
+        isGranted: Boolean
+    ) {
+        crimeSuspect.isEnabled = isGranted
+        crimeReport.isEnabled = isGranted
+        crimeCallBtn.isEnabled = isGranted
     }
 }
