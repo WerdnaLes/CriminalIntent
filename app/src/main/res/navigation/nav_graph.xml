@@ -35,6 +35,9 @@
             app:destination="@id/crimeListFragment"
             app:popUpTo="@id/nav_graph"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/zoom_picture"
+            app:destination="@id/dialogFragment" />
     </fragment>
     <dialog
         android:id="@+id/datePickerFragment"
@@ -52,4 +55,12 @@
             android:name="crimeTime"
             app:argType="java.util.Date" />
     </dialog>
+    <fragment
+        android:id="@+id/dialogFragment"
+        android:name="com.example.criminalintent.DialogFragment"
+        android:label="DialogFragment" >
+        <argument
+            android:name="photoFile"
+            app:argType="string" />
+    </fragment>
 </navigation>

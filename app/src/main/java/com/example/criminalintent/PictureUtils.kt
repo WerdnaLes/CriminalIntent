@@ -3,6 +3,7 @@ package com.example.criminalintent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
+import androidx.exifinterface.media.ExifInterface
 import kotlin.math.roundToInt
 
 // Rescale taken image:
@@ -37,8 +38,30 @@ fun getScaledBitmap(
     })
 }
 
+// Correct the orientation of the taken image:
+fun correctImageOrientation(fileName: String, bitImage: Bitmap): Bitmap {
+    // Setup to rotate selected image:
+    val ei = ExifInterface(fileName)
+    val orientation = ei.getAttributeInt(
+        ExifInterface.TAG_ORIENTATION,
+        ExifInterface.ORIENTATION_UNDEFINED
+    )
+
+    var rotatedBitImage = bitImage
+    when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 ->
+            rotatedBitImage = rotateImage(bitImage, 90.0f)
+        ExifInterface.ORIENTATION_ROTATE_180 ->
+            rotatedBitImage = rotateImage(bitImage, 180.0f)
+        ExifInterface.ORIENTATION_ROTATE_270 ->
+            rotatedBitImage = rotateImage(bitImage, 270.0f)
+    }
+
+    return rotatedBitImage
+}
+
 // Rotate Image if needed:
- fun rotateImage(source: Bitmap, angle: Float): Bitmap {
+fun rotateImage(source: Bitmap, angle: Float): Bitmap {
     val matrix = Matrix()
     matrix.postRotate(angle)
     return Bitmap.createBitmap(

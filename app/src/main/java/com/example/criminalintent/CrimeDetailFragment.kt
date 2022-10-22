@@ -21,7 +21,6 @@ import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.doOnLayout
 import androidx.core.widget.doOnTextChanged
-import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
@@ -165,6 +164,7 @@ class CrimeDetailFragment : Fragment() {
             // Ensure that the device has an app to resolve the intent (disable button otherwise).
             crimeCamera.isEnabled =
                 canResolveCameraAction()
+
         }
 
         // UI update FROM the backEnd (CrimeListDetailViewModel)
@@ -303,6 +303,12 @@ class CrimeDetailFragment : Fragment() {
             updatePhoto(crime.photoFileName)
             // Enabling callback if the title is blank:
             onBackPressedCallback.isEnabled = crime.title == ""
+
+            crimePhoto.setOnClickListener {
+                crime.photoFileName?.let {
+                    findNavController().navigate(CrimeDetailFragmentDirections.zoomPicture(it))
+                }
+            }
         }
     }
 
@@ -402,27 +408,14 @@ class CrimeDetailFragment : Fragment() {
             }
 
             if (photoFile?.exists() == true) {
-                // Setup to rotate selected image:
-                val ei = ExifInterface(photoFile.path)
-                val orientation = ei.getAttributeInt(
-                    ExifInterface.TAG_ORIENTATION,
-                    ExifInterface.ORIENTATION_UNDEFINED
-                )
-
                 binding.crimePhoto.doOnLayout { measuredView ->
-                    var scaledBitmap = getScaledBitmap(
+                    val scaledBitmap = getScaledBitmap(
                         photoFile.path,
                         measuredView.width,
                         measuredView.height
-                    )
-                    // Perform rotation if needed:
-                    when (orientation) {
-                        ExifInterface.ORIENTATION_ROTATE_90 ->
-                            scaledBitmap = rotateImage(scaledBitmap, 90.0f)
-                        ExifInterface.ORIENTATION_ROTATE_180 ->
-                            scaledBitmap = rotateImage(scaledBitmap, 180.0f)
-                        ExifInterface.ORIENTATION_ROTATE_270 ->
-                            scaledBitmap = rotateImage(scaledBitmap, 270.0f)
+                    ).let {
+                        // Perform rotation if needed:
+                        correctImageOrientation(photoFile.path, it)
                     }
 
                     binding.crimePhoto.setImageBitmap(scaledBitmap)
