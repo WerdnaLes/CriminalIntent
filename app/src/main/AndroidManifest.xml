@@ -3,6 +3,9 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
 
     <application
         android:name=".CriminalIntentApplication"
@@ -28,12 +31,28 @@
                 android:name="android.app.lib_name"
                 android:value="" />
         </activity>
+        <!--Adding a FileProvider declaration-->
+        <provider
+            android:authorities="com.example.criminalintent.fileprovider"
+            android:name="androidx.core.content.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <!--Hooking up the paths description:-->
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/files" />
+        </provider>
     </application>
     <!--Adding external queries to block all the external intents.-->
     <queries>
+        <!--Allow querying for contacts application-->
         <intent>
             <action android:name="android.intent.action.PICK" />
             <data android:mimeType="vnd.android.cursor.dir/contact" />
+        </intent>
+        <!--Allow querying for camera applications-->
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
         </intent>
     </queries>
 

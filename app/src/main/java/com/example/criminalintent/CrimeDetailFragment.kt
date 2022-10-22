@@ -6,6 +6,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.provider.MediaStore
 import android.provider.Settings
 import android.text.format.DateFormat
 import android.view.*
@@ -15,9 +16,12 @@ import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.core.app.ActivityCompat
+import androidx.core.content.FileProvider
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
+import androidx.core.view.doOnLayout
 import androidx.core.widget.doOnTextChanged
+import androidx.exifinterface.media.ExifInterface
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
@@ -28,7 +32,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.example.criminalintent.databinding.FragmentCrimeDetailBinding
 import kotlinx.coroutines.launch
+import java.io.File
 import java.util.*
+
 
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
@@ -62,6 +68,19 @@ class CrimeDetailFragment : Fragment() {
         // Disable/Enable buttons according to the permission granted:
         binding.isReadContactsPermissionGranted(isGranted)
     }
+
+    // Get result from take photo button:
+    private val takePhoto = registerForActivityResult(
+        ActivityResultContracts.TakePicture()
+    ) { didTakePhoto ->
+        if (didTakePhoto && photoName != null) {
+            crimeDetailViewModel.updateCrime { oldCrime ->
+                oldCrime.copy(photoFileName = photoName)
+            }
+        }
+    }
+
+    private var photoName: String? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -98,6 +117,7 @@ class CrimeDetailFragment : Fragment() {
                 }
             }
 
+            // IsCrimeSolved checkbox checked listener:
             crimeSolved.setOnCheckedChangeListener { _, isChecked ->
                 crimeDetailViewModel.updateCrime { oldCrime ->
                     oldCrime.copy(isSolved = isChecked)
@@ -117,6 +137,34 @@ class CrimeDetailFragment : Fragment() {
                 )
             crimeSuspect.isEnabled =
                 canResolveIntent(selectSuspectIntent)
+
+            // Take photo listener:
+            crimeCamera.setOnClickListener {
+                photoName = "IMG_${Date()}.JPG"
+                val photoFile =
+                    File(
+                        requireContext().applicationContext.filesDir,
+                        photoName!!
+                    )
+                val photoUri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "com.example.criminalintent.fileprovider",
+                    photoFile
+                )
+
+                takePhoto.launch(photoUri)
+            }
+
+            // UPD: can't find activity to resolve the intent so it crashes the app =/
+//            val captureImageIntent =
+//                takePhoto.contract.createIntent(
+//                    requireContext(),
+//                    null
+//                )
+            // Used this instead:
+            // Ensure that the device has an app to resolve the intent (disable button otherwise).
+            crimeCamera.isEnabled =
+                canResolveCameraAction()
         }
 
         // UI update FROM the backEnd (CrimeListDetailViewModel)
@@ -251,6 +299,8 @@ class CrimeDetailFragment : Fragment() {
             crimeSuspect.text = crime.suspect.ifEmpty {
                 getString(R.string.crime_suspect_text)
             }
+
+            updatePhoto(crime.photoFileName)
             // Enabling callback if the title is blank:
             onBackPressedCallback.isEnabled = crime.title == ""
         }
@@ -339,6 +389,52 @@ class CrimeDetailFragment : Fragment() {
         return resolvedActivity != null
     }
 
+    private fun canResolveCameraAction(): Boolean {
+        val captureImageIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+        return captureImageIntent.resolveActivity(requireActivity().packageManager) != null
+    }
+
+    // Measure and/or rotate Photo BEFORE it appears in the ImageView
+    private fun updatePhoto(photoFileName: String?) {
+        if (binding.crimePhoto.tag != photoFileName) {
+            val photoFile = photoFileName?.let {
+                File(requireContext().applicationContext.filesDir, it)
+            }
+
+            if (photoFile?.exists() == true) {
+                // Setup to rotate selected image:
+                val ei = ExifInterface(photoFile.path)
+                val orientation = ei.getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_UNDEFINED
+                )
+
+                binding.crimePhoto.doOnLayout { measuredView ->
+                    var scaledBitmap = getScaledBitmap(
+                        photoFile.path,
+                        measuredView.width,
+                        measuredView.height
+                    )
+                    // Perform rotation if needed:
+                    when (orientation) {
+                        ExifInterface.ORIENTATION_ROTATE_90 ->
+                            scaledBitmap = rotateImage(scaledBitmap, 90.0f)
+                        ExifInterface.ORIENTATION_ROTATE_180 ->
+                            scaledBitmap = rotateImage(scaledBitmap, 180.0f)
+                        ExifInterface.ORIENTATION_ROTATE_270 ->
+                            scaledBitmap = rotateImage(scaledBitmap, 270.0f)
+                    }
+
+                    binding.crimePhoto.setImageBitmap(scaledBitmap)
+                    binding.crimePhoto.tag = photoFileName
+                }
+            } else {
+                binding.crimePhoto.setImageBitmap(null)
+                binding.crimePhoto.tag = null
+            }
+        }
+    }
+
     // Check READ_CONTACTS permission:
     private fun checkReadContactsPermission() {
         when {
@@ -379,7 +475,6 @@ class CrimeDetailFragment : Fragment() {
                     android.Manifest.permission.READ_CONTACTS
                 )
             }
-
         }
     }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.example.criminalintent.database.CrimeDatabase
 import com.example.criminalintent.database.migration_1_2
+import com.example.criminalintent.database.migration_2_3
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -32,7 +33,7 @@ private constructor(
             context.applicationContext,
             CrimeDatabase::class.java,
             DATABASE_NAME
-        ).addMigrations(migration_1_2)
+        ).addMigrations(migration_1_2, migration_2_3)
         .build()
 
     // Adding repository functions:

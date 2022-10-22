@@ -32,7 +32,9 @@
             app:destination="@id/timePickerFragment" />
         <action
             android:id="@+id/crime_removal"
-            app:destination="@id/crimeListFragment" />
+            app:destination="@id/crimeListFragment"
+            app:popUpTo="@id/nav_graph"
+            app:popUpToInclusive="true" />
     </fragment>
     <dialog
         android:id="@+id/datePickerFragment"

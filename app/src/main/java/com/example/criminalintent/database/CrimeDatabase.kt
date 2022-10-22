@@ -14,7 +14,7 @@ in that class when converting types.
 ~Add exportSchema = false parameter if you want to disable the export
 */
 
-@Database(entities = [Crime::class], version = 2) // class that represents the database
+@Database(entities = [Crime::class], version = 3) // class that represents the database
 @TypeConverters(CrimeTypeConverters::class) // add Type Converters
 abstract class CrimeDatabase : RoomDatabase() {
     abstract fun crimeDao(): CrimeDao
@@ -28,6 +28,14 @@ val migration_1_2 = object : Migration(1, 2) {
         )
         database.execSQL(
             "ALTER TABLE Crime ADD COLUMN suspectPhoneNumber TEXT NOT NULL DEFAULT ''"
+        )
+    }
+}
+
+val migration_2_3 = object : Migration(2, 3) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        database.execSQL(
+            "ALTER TABLE Crime ADD COLUMN photoFileName TEXT"
         )
     }
 }
