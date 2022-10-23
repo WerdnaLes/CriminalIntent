@@ -1,6 +1,7 @@
 package com.example.criminalintent
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -38,7 +39,6 @@ import java.util.*
 private const val DATE_FORMAT = "EEE, MMM, dd"
 
 class CrimeDetailFragment : Fragment() {
-
     private var _binding: FragmentCrimeDetailBinding? = null
     private val binding
         get() = checkNotNull(_binding) {
@@ -50,8 +50,6 @@ class CrimeDetailFragment : Fragment() {
     private val crimeDetailViewModel: CrimeDetailViewModel by viewModels {
         CrimeDetailViewModelFactory(args.crimeId)
     }
-
-    private lateinit var onBackPressedCallback: OnBackPressedCallback
 
     // PickContact result callback:
     private val selectSuspect = registerForActivityResult(
@@ -79,17 +77,15 @@ class CrimeDetailFragment : Fragment() {
         }
     }
 
+    private lateinit var onBackPressedCallback: OnBackPressedCallback
+
     private var photoName: String? = null
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View? {
-        /*
-        Prevent going back if the title is blank. The callback will be called in at least
-        STARTED state.
-        */
+    // Removed blank title bug by moving onBackPressedCallback to onAttach():
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        /* Prevent going back if the title is blank. The callback will be called in at least
+        STARTED state. */
         onBackPressedCallback = requireActivity()
             .onBackPressedDispatcher
             .addCallback(this) {
@@ -99,6 +95,13 @@ class CrimeDetailFragment : Fragment() {
                     Toast.LENGTH_SHORT
                 ).show()
             }
+    }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
         _binding =
             FragmentCrimeDetailBinding.inflate(inflater, container, false)
@@ -109,6 +112,7 @@ class CrimeDetailFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         // UI update TO the backEnd (CrimeListDetailViewModel)
+
         binding.apply {
             crimeTitle.doOnTextChanged { text, _, _, _ ->
                 crimeDetailViewModel.updateCrime { oldCrime ->
@@ -302,7 +306,7 @@ class CrimeDetailFragment : Fragment() {
 
             updatePhoto(crime.photoFileName)
             // Enabling callback if the title is blank:
-            onBackPressedCallback.isEnabled = crime.title == ""
+            onBackPressedCallback.isEnabled = crime.title.isEmpty()
 
             crimePhoto.setOnClickListener {
                 crime.photoFileName?.let {
