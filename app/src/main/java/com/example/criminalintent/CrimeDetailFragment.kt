@@ -91,7 +91,7 @@ class CrimeDetailFragment : Fragment() {
             .addCallback(this) {
                 Toast.makeText(
                     requireContext(),
-                    "Title can not be blank!",
+                    R.string.title_is_blank_toast,
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -244,6 +244,7 @@ class CrimeDetailFragment : Fragment() {
             }
             // Switched from custom date (SimpleDateFormat) to DateFormat:
             crimeDate.text =
+//                    DateFormat.getLongDateFormat(requireContext()).format(crime.date) -> Date according to Locale
                 DateFormat.format("EEEE, MMM dd, yyyy", crime.date)
                     .toString() // Orig: crime.date.toString()
             // Showing Dialog Fragment:
@@ -363,11 +364,9 @@ class CrimeDetailFragment : Fragment() {
                     true -> retrieveSuspectPhoneNumber(suspectId, suspect)
                     // Else disable crimeCallButton and show Toast:
                     else -> {
-                        val noNumberMessage =
-                            "Selected suspect has no phone number, so you can't call him."
                         Toast.makeText(
                             requireContext(),
-                            noNumberMessage,
+                            R.string.no_number_toast,
                             Toast.LENGTH_SHORT
                         ).show()
                         crimeDetailViewModel.updateCrime { oldCrime ->
@@ -462,12 +461,9 @@ class CrimeDetailFragment : Fragment() {
                 // You can use the API that requires the permission.
 
                 // Create an AlertDialog to ask for permission:
-                val title = "Permission needed"
-                val message =
-                    "We need the permission to read contacts in order to choose a suspect and the ability to call them."
                 val builder = AlertDialog.Builder(requireContext())
-                builder.setTitle(title)
-                    .setMessage(message)
+                builder.setTitle(R.string.permission_read_contacts_title)
+                    .setMessage(R.string.permission_read_contacts_message)
                     .setPositiveButton(
                         android.R.string.ok
                     ) { _, _ ->

@@ -21,4 +21,9 @@
     <string name="call_suspect_btnText">Call Suspect</string>
     <string name="move_to_settings">Open Settings</string>
     <string name="zoomed_photo_iv">Zoomed Photo</string>
+    <string name="title_is_blank_toast">"Title can not be blank!"</string>
+    <string name="no_number_toast">"Selected suspect has no phone number, so you can't call him."</string>
+    <string name="permission_read_contacts_title">Permission needed"</string>
+    <string name="permission_read_contacts_message">"We need the permission to read contacts in order to choose a
+        suspect and the ability to call them."</string>
 </resources>
