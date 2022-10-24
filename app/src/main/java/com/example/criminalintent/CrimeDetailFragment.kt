@@ -1,6 +1,5 @@
 package com.example.criminalintent
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -21,6 +20,7 @@ import androidx.core.content.FileProvider
 import androidx.core.view.MenuHost
 import androidx.core.view.MenuProvider
 import androidx.core.view.doOnLayout
+import androidx.core.view.isVisible
 import androidx.core.widget.doOnTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResultListener
@@ -281,22 +281,16 @@ class CrimeDetailFragment : Fragment() {
                 startActivity(chooserIntent)
             }
 
+            crimeCallBtn.isVisible = crime.suspectPhoneNumber.isNotEmpty()
+
             // Commit DIAL with a suspect phone number:
             crimeCallBtn.setOnClickListener {
                 // URI HAS TO START WITH "tel:" !!!
-                if (crime.suspectPhoneNumber.isNotEmpty()) {
-                    val number = Uri.parse("tel:${crime.suspectPhoneNumber}")
-                    val dialIntent =
-                        Intent(Intent.ACTION_DIAL, number)
+                val number = Uri.parse("tel:${crime.suspectPhoneNumber}")
+                val dialIntent =
+                    Intent(Intent.ACTION_DIAL, number)
 
-                    startActivity(dialIntent)
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "You should choose the suspect first!",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                startActivity(dialIntent)
             }
 
             // Set default text if there is no suspect
@@ -338,52 +332,78 @@ class CrimeDetailFragment : Fragment() {
     }
 
     // Parse the Uri result picked from Contacts selected and update the Crime:
-    @SuppressLint("Range")
     private fun parseContactSelection(contactUri: Uri) {
         // Create cursor:
-        val queryCursor = requireActivity().contentResolver
-            .query(contactUri, null, null, null, null)
+        val queryFields =
+            arrayOf(
+                ContactsContract.Contacts.DISPLAY_NAME,
+                ContactsContract.Contacts._ID,
+                ContactsContract.Contacts.HAS_PHONE_NUMBER
+            )
 
+        val queryCursor = requireActivity().contentResolver
+            .query(contactUri, queryFields, null, null, null)
+
+        // use() is a closeable function that executes the given block and closes it down correctly
         // Navigate through the cursor and retrieve the String value from the [0] column:
         queryCursor?.use { cursor ->
             if (cursor.moveToFirst()) {
                 // Get contact name:
                 val suspect =
-                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME))
+                    cursor.getString(0)
                 // Get contact ID:
                 val suspectId =
-                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts._ID))
-                crimeDetailViewModel.updateCrime { oldCrime ->
-                    oldCrime.copy(suspect = suspect)
-                }
-
+                    cursor.getString(1)
                 // Check if the contact has a number:
                 val hasPhoneNumber =
-                    cursor.getString(cursor.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))
-                        .toInt()
-                // Proceed querying for the number by contact's ID:
-                if (hasPhoneNumber > 0) {
-                    val phoneCursor = requireActivity().contentResolver
-                        .query(
-                            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                            null,
-                            ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
-                            arrayOf(suspectId),
-                            null
-                        )
-                    phoneCursor?.use { numberCursor ->
-                        if (numberCursor.moveToFirst()) {
-                            // Get the number in String format and parse it to URI so it is suitable for the Intent:
-                            numberCursor.getString(
-                                numberCursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-                            ).let { phoneNumber ->
-                                crimeDetailViewModel.updateCrime { oldCrime ->
-                                    oldCrime.copy(suspectPhoneNumber = phoneNumber)
-                                }
-                            }
+                    cursor.getString(2).toInt()
+
+                when (hasPhoneNumber > 0) {
+                    // Proceed querying for the number by contact's ID:
+                    true -> retrieveSuspectPhoneNumber(suspectId, suspect)
+                    // Else disable crimeCallButton and show Toast:
+                    else -> {
+                        val noNumberMessage =
+                            "Selected suspect has no phone number, so you can't call him."
+                        Toast.makeText(
+                            requireContext(),
+                            noNumberMessage,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                        crimeDetailViewModel.updateCrime { oldCrime ->
+                            oldCrime.copy(suspect = suspect, suspectPhoneNumber = "")
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Retrieve suspect's phone number if it exists:
+    private fun retrieveSuspectPhoneNumber(
+        suspectId: String?,
+        suspect: String
+    ) {
+        val queryFields =
+            arrayOf(ContactsContract.CommonDataKinds.Phone.NUMBER)
+        val phoneCursor = requireActivity().contentResolver
+            .query(
+                ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                queryFields,
+                ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?",
+                arrayOf(suspectId),
+                null
+            )
+
+        phoneCursor?.use { numberCursor ->
+            if (numberCursor.moveToFirst()) {
+                // Get the number in String format and parse it to URI in the callSuspect Button onClickListener:
+                numberCursor.getString(0)
+                    .let { phoneNumber ->
+                        crimeDetailViewModel.updateCrime { oldCrime ->
+                            oldCrime.copy(suspect = suspect, suspectPhoneNumber = phoneNumber)
+                        }
+                    }
             }
         }
     }
