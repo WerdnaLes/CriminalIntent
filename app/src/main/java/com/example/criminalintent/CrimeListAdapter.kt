@@ -1,6 +1,6 @@
 package com.example.criminalintent
 
-import android.icu.text.DateFormat.*
+import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -17,9 +17,7 @@ class CrimeHolder(
         onCrimeClicked: (crimeId: UUID) -> Unit
     ) {
         binding.crimeTitle.text = crime.title
-        binding.crimeDate.text =
-            getDateTimeInstance(FULL, SHORT).format(crime.date)
-//            DateFormat.format("EEE, MMMM dd, h:mm a, yyyy", crime.date).toString() -> old one
+        binding.crimeDate.text = DateFormat.format("EEE, MMMM dd, h:mm a, yyyy", crime.date).toString()
         binding.crimeSolved.visibility = if (crime.isSolved) {
             View.VISIBLE
         } else {
