@@ -3,7 +3,6 @@ package com.example.criminalintent
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.icu.text.DateFormat.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
@@ -244,16 +243,17 @@ class CrimeDetailFragment : Fragment() {
                 crimeTitle.setText(crime.title)
             }
             // Switched from custom date (SimpleDateFormat) to DateFormat:
-            crimeDate.text = getDateInstance(FULL).format(crime.date)
-//                DateFormat.format("EEEE, MMM dd, yyyy", crime.date)
-//                    .toString() // Orig: crime.date.toString() -> old one
+            crimeDate.text =
+//                    DateFormat.getLongDateFormat(requireContext()).format(crime.date) -> Date according to Locale
+                DateFormat.format("EEEE, MMM dd, yyyy", crime.date)
+                    .toString() // Orig: crime.date.toString()
             // Showing Dialog Fragment:
             crimeDate.setOnClickListener {
                 findNavController()
                     .navigate(CrimeDetailFragmentDirections.selectDate(crime.date))
             }
-            crimeTime.text = getTimeInstance(SHORT).format(crime.date)
-//                DateFormat.format("h:mm a", crime.date).toString() -> old one
+            crimeTime.text =
+                DateFormat.format("h:mm a", crime.date).toString()
             // Showing TimePickerDialog (Challenge):
             crimeTime.setOnClickListener {
                 findNavController()
