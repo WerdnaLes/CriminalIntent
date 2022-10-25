@@ -1,5 +1,6 @@
 package com.example.criminalintent
 
+import android.content.Context
 import android.icu.text.DateFormat.*
 import android.view.LayoutInflater
 import android.view.View
@@ -14,26 +15,41 @@ class CrimeHolder(
 
     fun bind(
         crime: Crime,
+        context: Context,
         onCrimeClicked: (crimeId: UUID) -> Unit
     ) {
-        binding.crimeTitle.text = crime.title
-        binding.crimeDate.text =
-            getDateTimeInstance(FULL, SHORT).format(crime.date)
+        binding.apply {
+            crimeTitle.text = crime.title
+            crimeDate.text =
+                getDateTimeInstance(FULL, SHORT).format(crime.date)
 //            DateFormat.format("EEE, MMMM dd, h:mm a, yyyy", crime.date).toString() -> old one
-        binding.crimeSolved.visibility = if (crime.isSolved) {
-            View.VISIBLE
-        } else {
-            View.GONE
-        }
 
-        binding.root.setOnClickListener {
-            onCrimeClicked(crime.id)
+            val isSolved: String
+            crimeSolved.visibility = if (crime.isSolved) {
+                isSolved = "The crime is solved"
+                View.VISIBLE
+            } else {
+                isSolved = "The crime is not solved yet"
+                View.GONE
+            }
+
+            // Add View description for TalkBack to describe the crime:
+            root.contentDescription =
+                context.resources.getString(
+                    R.string.crime_content_description,
+                    crime.title, isSolved, crimeDate.text
+                )
+
+            root.setOnClickListener {
+                onCrimeClicked(crime.id)
+            }
         }
     }
 }
 
 class CrimeListAdapter(
     private val crimes: List<Crime>,
+    private val context: Context,
     private val onCrimeClicked: (crimeId: UUID) -> Unit
 ) : RecyclerView.Adapter<CrimeHolder>() {
 
@@ -48,7 +64,7 @@ class CrimeListAdapter(
     // Binds the ViewHolder with an information
     override fun onBindViewHolder(holder: CrimeHolder, position: Int) {
         val crime = crimes[position]
-        holder.bind(crime, onCrimeClicked)
+        holder.bind(crime, context, onCrimeClicked)
     }
 
     // Represents how many times adapter will call the onCreateViewHolder()

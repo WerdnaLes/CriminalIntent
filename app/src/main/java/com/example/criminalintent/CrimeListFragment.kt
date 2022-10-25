@@ -54,7 +54,7 @@ class CrimeListFragment : Fragment() {
                         addCrimeBtn.isVisible = crimes.isEmpty()
                         // Set the adapter:
                         crimeRecyclerView.adapter =
-                            CrimeListAdapter(crimes) { crimeId ->
+                            CrimeListAdapter(crimes, requireContext()) { crimeId ->
                                 findNavController()
                                     .navigate(CrimeListFragmentDirections.showCrimeDetail(crimeId))
                             }

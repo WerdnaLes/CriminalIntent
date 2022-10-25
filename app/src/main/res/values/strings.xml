@@ -26,4 +26,9 @@
     <string name="permission_read_contacts_title">Permission needed"</string>
     <string name="permission_read_contacts_message">"We need the permission to read contacts in order to choose a
         suspect and the ability to call them."</string>
+    <string name="crime_photo_button_description">Take photo of crime scene</string>
+    <string name="crime_photo_no_image_description">Crime scene photo (not set)</string>
+    <string name="crime_photo_image_description">Crime scene photo (set)</string>
+    <string name="crime_content_description">The title is %1$s, Crime status: %2$s, The date of crime is %3$s</string>
+    <string name="crime_not_solved_image">The crime is not solved yet</string>
 </resources>

@@ -441,12 +441,28 @@ class CrimeDetailFragment : Fragment() {
                         correctImageOrientation(photoFile.path, it)
                     }
 
-                    binding.crimePhoto.setImageBitmap(scaledBitmap)
-                    binding.crimePhoto.tag = photoFileName
+                    binding.apply {
+                        crimePhoto.setImageBitmap(scaledBitmap)
+                        crimePhoto.tag = photoFileName
+                        crimePhoto.contentDescription =
+                            getString(R.string.crime_photo_image_description)
+                        // TalkBack announces given text after the photo has been set:
+                        crimePhoto.let { photo ->
+                            photo.postDelayed(
+                                {
+                                    photo.announceForAccessibility("Crime scene photo has been set!")
+                                }, 2000
+                            )
+                        }
+                    }
                 }
             } else {
-                binding.crimePhoto.setImageBitmap(null)
-                binding.crimePhoto.tag = null
+                binding.apply {
+                    crimePhoto.setImageBitmap(null)
+                    crimePhoto.tag = null
+                    crimePhoto.contentDescription =
+                        getString(R.string.crime_photo_no_image_description)
+                }
             }
         }
     }
